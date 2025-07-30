@@ -1,19 +1,15 @@
 from flask import Flask, request, jsonify
-from moodlens import analyze_mood  # your custom function
+from moodlens import analyze_mood  # now powered by TextBlob
 
 app = Flask(__name__)
 
 @app.route('/analyze', methods=['POST'])
 def analyze():
-    # Get the text input from Flutter
     text = request.json.get('text', '')
     if not text:
         return jsonify({'error': 'No text provided'}), 400
 
-    # Call your mood analysis function from moodlens.py
-    mood, suggestions = analyze_mood(text)
-
-    # Return the emotion and suggestions to the frontend
+    mood, suggestions = analyze_mood(text)  # uses real sentiment scoring
     return jsonify({
         'emotion': mood,
         'recommendations': suggestions
