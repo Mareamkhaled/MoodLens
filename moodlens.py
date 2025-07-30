@@ -1,16 +1,31 @@
 from textblob import TextBlob
 
 def analyze_mood(text):
-    blob = TextBlob(text)
-    polarity = blob.sentiment.polarity
-
-    emotion = classify_emotion(polarity)
+    emotion = classify_emotion(text)
     recommendations = get_recommendations(emotion)
     color = get_mood_color(emotion)
-
     return emotion, recommendations, color
 
-def classify_emotion(polarity):
+def classify_emotion(text):
+    blob = TextBlob(text)
+    polarity = blob.sentiment.polarity
+    lower_text = text.lower()
+
+    # Keyword-based cues
+    keywords = {
+        "frustrated": ["tried fixing", "still won’t work", "what’s even the point", "ugh", "fed up", "give up"],
+        "angry": ["ridiculous", "i’m done", "can’t stand", "infuriating", "rage", "furious"],
+        "joyful": ["excited", "overjoyed", "ecstatic", "thrilled", "so happy"],
+        "calm": ["peaceful", "relaxed", "serene", "quiet", "restful"],
+        "content": ["satisfied", "grateful", "comfortable", "pleased", "fine"],
+        "upset": ["sad", "hurt", "disappointed", "zعلان", "tired", "heartbroken"]
+    }
+
+    for emotion, cues in keywords.items():
+        if any(phrase in lower_text for phrase in cues):
+            return emotion
+
+    # Polarity fallback
     if polarity > 0.6:
         return "joyful"
     elif polarity > 0.3:
