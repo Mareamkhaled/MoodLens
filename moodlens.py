@@ -4,7 +4,7 @@ def analyze_mood(text):
     emotion = classify_emotion(text)
     recommendations = get_recommendations(emotion)
     color = get_mood_color(emotion)
-    return emotion, recommendations, color
+    return emotion, recommendations["suggestions"],recommendations["activity"], color
 
 def classify_emotion(text):
     blob = TextBlob(text)
@@ -91,4 +91,18 @@ def get_recommendations(emotion):
             "Do a self-check-in"
         ]
     }
-    return suggestions.get(emotion, ["Take a moment to reflect."])
+
+    activity = {
+        "joyful": "Go for a walk with music or dance around your room 🎶",
+        "content": "Make a gratitude list or enjoy a cozy drink ☕",
+        "calm": "Try a 5-minute meditation or light stretching 🧘",
+        "angry": "Do a quick workout or write in a journal 🏋️",
+        "frustrated": "Sketch something random or organize your space ✏️",
+        "upset": "Watch a comfort movie or call a friend 📞",
+        "neutral": "Try something new like a podcast or a short walk 🚶"
+    }
+
+    return {
+        "suggestions": suggestions.get(emotion, ["Take a moment to reflect."]),
+        "activity": activity.get(emotion, "Do something that feels right for you.")
+    }

@@ -9,11 +9,12 @@ def analyze():
     if not text:
         return jsonify({'error': 'No text provided'}), 400
 
-    mood, suggestions, color = analyze_mood(text)
+    mood, suggestions,activity ,color = analyze_mood(text)
     return jsonify({
         'emotion': mood,
         'recommendations': suggestions,
-        'color': color
+        'color': color,
+        'activity': activity
     })
 
 if __name__ == '__main__':
