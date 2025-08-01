@@ -1,43 +1,72 @@
 from textblob import TextBlob
+from langdetect import detect
+from nltk.sentiment.vader import SentimentIntensityAnalyzer
+from transformers import pipeline
+import nltk
+
+# Download VADER lexicon if not already present
+nltk.download('vader_lexicon')
+
+# Initialize sentiment models
+vader = SentimentIntensityAnalyzer()
+transformer_sentiment = pipeline("sentiment-analysis")
 
 def analyze_mood(text):
     emotion = classify_emotion(text)
     recommendations = get_recommendations(emotion)
     color = get_mood_color(emotion)
-    return emotion, recommendations["suggestions"],recommendations["activity"], color
+    return emotion, recommendations["suggestions"], recommendations["activity"], color
 
 def classify_emotion(text):
-    blob = TextBlob(text)
-    polarity = blob.sentiment.polarity
     lower_text = text.lower()
+    lang = detect(text)
 
     # Keyword-based cues
     keywords = {
-        "frustrated": ["tried fixing", "still won’t work", "what’s even the point", "ugh", "fed up", "give up"],
-        "angry": ["ridiculous", "i’m done", "can’t stand", "infuriating", "rage", "furious"],
-        "joyful": ["excited", "overjoyed", "ecstatic", "thrilled", "so happy"],
-        "calm": ["peaceful", "relaxed", "serene", "quiet", "restful"],
-        "content": ["satisfied", "grateful", "comfortable", "pleased", "fine"],
-        "upset": ["sad", "hurt", "disappointed", "zعلان", "tired", "heartbroken"]
+        "frustrated": ["tried fixing", "still won’t work", "what’s even the point", "ugh", "fed up", "give up", "overwhelmed", "burned out"],
+        "angry": ["ridiculous", "i’m done", "can’t stand", "infuriating", "rage", "furious", "hate", "so mad"],
+        "joyful": ["excited", "overjoyed", "ecstatic", "thrilled", "so happy", "elated", "grinning"],
+        "calm": ["peaceful", "relaxed", "serene", "quiet", "restful", "chill"],
+        "content": ["satisfied", "grateful", "comfortable", "pleased", "fine", "okay", "alright"],
+        "upset": ["sad", "hurt", "disappointed", "زعلان", "تعبان", "tired", "heartbroken", "exhausted", "drained", "lonely", "down"]
     }
 
     for emotion, cues in keywords.items():
         if any(phrase in lower_text for phrase in cues):
             return emotion
 
-    # Polarity fallback
-    if polarity > 0.6:
-        return "joyful"
-    elif polarity > 0.3:
-        return "content"
-    elif polarity > 0.1:
-        return "calm"
-    elif polarity < -0.6:
-        return "angry"
-    elif polarity < -0.3:
-        return "frustrated"
-    elif polarity < -0.1:
-        return "upset"
+    # Arabic fallback
+    if lang == "ar":
+        if "زعلان" in lower_text or "تعبان" in lower_text:
+            return "upset"
+        elif "فرحان" in lower_text or "مبسوط" in lower_text:
+            return "joyful"
+        else:
+            return "neutral"
+
+    # English fallback: VADER + Transformer
+    vader_score = vader.polarity_scores(text)
+    compound = vader_score['compound']
+
+    transformer_result = transformer_sentiment(text)[0]
+    label = transformer_result['label']
+    confidence = transformer_result['score']
+
+    # Intensity scoring
+    if label == "POSITIVE":
+        if compound > 0.7 and confidence > 0.9:
+            return "joyful"
+        elif compound > 0.4:
+            return "content"
+        else:
+            return "calm"
+    elif label == "NEGATIVE":
+        if compound < -0.7 and confidence > 0.9:
+            return "angry"
+        elif compound < -0.4:
+            return "frustrated"
+        else:
+            return "upset"
     else:
         return "neutral"
 
